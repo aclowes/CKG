@@ -2,6 +2,14 @@
 echo "Entry point to CKG Docker"
 cd /CKG
 
+echo "Loading database"
+# TODO mount the database directory as a volume and skip loading if it is already there
+mkdir -p /var/lib/neo4j/data/backup
+wget -O /var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump https://datashare.biochem.mpg.de/s/kCW7uKZYTfN8mwg/download
+mkdir -p /var/lib/neo4j/data/databases/graph.db
+sudo -u neo4j neo4j-admin load --from=/var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump --database=graph.db --force
+rm -rf /var/lib/neo4j/data/backup
+
 echo "Starting Neo4j"
 service neo4j start &
 service neo4j status

@@ -39,17 +39,19 @@ RUN groupadd ckg_group && \
     usermod -a -G ckg_group nginx
 
 
-RUN wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
-RUN tar -xzf Python-3.7.9.tgz
-WORKDIR /Python-3.7.9
-RUN ./configure
-RUN make altinstall
-RUN make install
+RUN wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && \
+    tar -xzf Python-3.7.9.tgz && \
+    cd /Python-3.7.9 && \
+    ./configure && \
+    make altinstall && \
+    make install && \
+    cd .. && \
+    rm -r Python-3.7.9.tgz Python-3.7.9
 ## pip upgrade
-RUN wget https://bootstrap.pypa.io/get-pip.py
-RUN python3 get-pip.py
-RUN pip3 install --upgrade pip
-RUN pip3 install setuptools
+RUN wget https://bootstrap.pypa.io/get-pip.py && \
+    python3 get-pip.py && \
+    rm get-pip.py && \
+    pip3 install --upgrade pip setuptools
 
 WORKDIR /
 
@@ -67,8 +69,9 @@ RUN echo "deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/" > /et
 
 # Installation openJDK 11
 RUN add-apt-repository ppa:openjdk-r/ppa
-RUN apt-get update
-RUN apt-get install -yq openjdk-11-jdk
+RUN apt-get update && \
+    apt-get install -yq openjdk-11-jdk && \
+    rm -rf /var/lib/apt/lists/*
 RUN java -version
 RUN javac -version 
 
@@ -76,7 +79,8 @@ RUN javac -version
 RUN wget -O - https://debian.neo4j.com/neotechnology.gpg.key | apt-key add - && \
     echo "deb [trusted=yes] https://debian.neo4j.com stable 4.2" > /etc/apt/sources.list.d/neo4j.list && \
     apt-get update && \
-    apt-get install -yq neo4j=1:4.2.3
+    apt-get install -yq neo4j=1:4.2.3 && \
+    rm -rf /var/lib/apt/lists/*
 
 ## Setup initial user Neo4j
 RUN rm -f /var/lib/neo4j/data/dbms/auth && \
@@ -91,22 +95,22 @@ COPY /resources/neo4j_db/neo4j.conf  /etc/neo4j/.
 RUN dos2unix /etc/neo4j/neo4j.conf
 
 ## Test the service Neo4j
-RUN service neo4j start && \
-    sleep 60 && \
-    ls -lrth /var/log && \
-    service neo4j stop
+#RUN service neo4j start && \
+#    sleep 60 && \
+#    ls -lrth /var/log && \
+#    service neo4j stop
 
 # Load backup with Clinical Knowledge Graph
-RUN mkdir -p /var/lib/neo4j/data/backup
-RUN wget -O /var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump https://datashare.biochem.mpg.de/s/kCW7uKZYTfN8mwg/download
-RUN mkdir -p /var/lib/neo4j/data/databases/graph.db
-RUN sudo -u neo4j neo4j-admin load --from=/var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump --database=graph.db --force
+#RUN mkdir -p /var/lib/neo4j/data/backup
+#RUN wget -O /var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump https://datashare.biochem.mpg.de/s/kCW7uKZYTfN8mwg/download
+#RUN mkdir -p /var/lib/neo4j/data/databases/graph.db
+#RUN sudo -u neo4j neo4j-admin load --from=/var/lib/neo4j/data/backup/ckg_latest_4.2.3.dump --database=graph.db --force
 
 # # Remove dump file
-RUN echo "Done with restoring backup, removing backup folder"
-RUN rm -rf /var/lib/neo4j/data/backup
+#RUN echo "Done with restoring backup, removing backup folder"
+#RUN rm -rf /var/lib/neo4j/data/backup
 
-RUN [ -e  /var/lib/neo4j/data/databases/store_lock ] && rm /var/lib/neo4j/data/databases/store_lock
+#RUN [ -e  /var/lib/neo4j/data/databases/store_lock ] && rm /var/lib/neo4j/data/databases/store_lock
 
 #R
 RUN apt-get update && \
@@ -116,6 +120,7 @@ RUN apt-get update && \
    r-base=${R_BASE_VERSION}* \
    r-base-dev=${R_BASE_VERSION}* \
    r-recommended=${R_BASE_VERSION}* && \
+   rm -rf /var/lib/apt/lists/* && \
    echo 'options(repos = c(CRAN = "https://cloud.r-project.org/"), download.file.method = "libcurl")' >> /etc/R/Rprofile.site
 
 ## Install packages
@@ -154,8 +159,10 @@ RUN ls -alrth data
 WORKDIR /
 
 # JupyterHub
-RUN apt-get -y install npm nodejs && \
-    npm install -g configurable-http-proxy
+RUN apt-get update && \
+    apt-get -y install npm nodejs && \
+    rm -rf /var/lib/apt/lists/*
+RUN npm install -g configurable-http-proxy
 RUN pip3 install jupyterhub
 
 RUN mkdir /etc/jupyterhub
